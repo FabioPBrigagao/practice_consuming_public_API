@@ -1,70 +1,46 @@
-import requests
+import sys
 import json
 import time
-import sys
+from itertools import combinations
 
-def main():
-    list_challenges = loop_possibilities()
-    print(list_challenges)
+import requests
+from ratelimit import limits, sleep_and_retry
 
-def loop_possibilities():
-    list = []
-    for i in range(1,28):
-        for j in range(1,28):
-            for n in range(1,28):
-                http_json = reply_http_json(
-                    'https://www.brfhub.com/backend/public/api/get-challenges?language=pt&profile=startup&areas%5B%5D={}&areas%5B%5D={}&areas%5B%5D={}'
-                    .format(i,j,n))
-                for challenge in http_json['data']:
-                    found_challenge = challenge['title']
-                    list = check_list(found_challenge,list)
-    return list
+def loop_possibilities(upper_bound, n_combinations=3):
+    return combinations(range(1, upper_bound + 1), n_combinations)
 
-def check_list(challenge, temp_list):
-    '''Method checks if string 'challenge' already exists in list 'temp_list'. If so, it returns the
-            origin list; otherwise, it append the string into the list and returns the updated list
+@sleep_and_retry
+@limits(calls=5, period=30) # decorator
+def _http_request(url, method='GET', params={}, json_data={}):
+    ''' Returns a json from the url inputted
 
-    input(s): string, list
-    output: list
-    '''
-    exist_challenge = False
-    for temp_challenge in temp_list:
-        if(challenge == temp_challenge):
-            exist_challenge = True
-            break
-    if(exist_challenge == False):
-        temp_list.append(challenge)
-    return temp_list
-
-def reply_http_json(URL):
-    ''' Returns a json from the URL inputted
-
-    input(s): Any URL
+    input(s): Any url
     output: r_json
     '''
-    r = requests.get(URL)
-    try:
-        r_json = r.json()
-    except:
-        if r.status_code == 429:
-            r_headers = json.loads(r.headers)
-            wait_time = r_headers['Retry-After'] + 1
-            wait_interval(wait_time)
-            return reply_http_json(URL)
-        else:
-            print('Invalid URL')
-            sys.exit()
-    return r_json
+    prep = requests.Request(method, url).prepare()
+    if json_data:
+        prep.prepare_body(data=json_data, files=None, json=True)
+    return requests.Session().send(prep)
 
-def wait_interval(sec):
-    '''Function pauses the script for a specific amount of seconds
+def main():
 
-    input(s): time in seconds
-    '''
-    start_time = time.perf_counter()
-    diff = 0
-    while diff < sec :
-        diff = time.perf_counter() - start_time
+    # pegar endpoint que retorna a lista de possibilidades do formulário anterior
+    # ao endpoint dos desafios
+
+    list_possibilities = loop_possibilities(27, 3)
+
+    list_data = []
+    for combination in list_possibilities:
+        url = 'https://www.brfhub.com/backend/public/api/get-challenges?language=pt&profile=startup&areas%5B%5D={}&areas%5B%5D={}&areas%5B%5D={}'.format(combination[0], combination[1], combination[2])
+
+        r = _http_request(url, 'GET')
+        if r.status_code != 200:
+            continue
+
+        dict_data = r.json()
+        list_data.append(dict_data['data']) # olhar depois
+
+    return list_data
 
 if __name__ == '__main__':
-    main()
+    print(main())
