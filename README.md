@@ -23,5 +23,5 @@ $ pip install -r requirements.txt
 Running
 =======
 ```bash
-$ python3 list_users.py
+$ python3 main.py
 ```
