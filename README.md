@@ -6,7 +6,7 @@ Getting started
 ===============
 
 ```bash
-python3 -m virtualenv -p path/to/python .
+$ python3 -m virtualenv -p path/to/python .
 ```
 
 Activate the virtual environment
@@ -23,5 +23,5 @@ $ pip install -r requirements.txt
 Running
 =======
 ```bash
-python3 list_users.py
+$ python3 list_users.py
 ```
