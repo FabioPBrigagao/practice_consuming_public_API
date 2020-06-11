@@ -1,6 +1,6 @@
-# practice_consuming_API
+# practice_consuming_public_API
 
-Learning how to scrape data by inspecting a page and extracting data from its API
+Learning how to scrape data from a public API through page inspector
 
 Getting started
 ===============
